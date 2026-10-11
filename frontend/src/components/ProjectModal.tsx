@@ -4,14 +4,15 @@ import { X, ExternalLink, Play, Pause, Volume2, VolumeX, Maximize, AlertCircle, 
 import type { Project } from '../config/portfolio';
 import { getVideoFileUrl } from '../admin/indexedDB';
 import { uploadVideo } from '../admin/videoUploader';
-import { updateProject } from '../admin/portfolioStorage';
+import { updateProject, getAuthToken } from '../admin/portfolioStorage';
 
 interface ProjectModalProps {
   project: Project | null;
   onClose: () => void;
+  onOpenAdmin?: () => void;
 }
 
-export default function ProjectModal({ project, onClose }: ProjectModalProps) {
+export default function ProjectModal({ project, onClose, onOpenAdmin }: ProjectModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -224,7 +225,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                     aria-label={`${project.title} video`}
                   />
                 ) : videoError ? (
-                  /* Error screen with 1-CLICK ATTACH VIDEO button */
+                  /* Error screen */
                   <div
                     className="p-6 text-center text-white/70 flex flex-col items-center justify-center gap-3 w-full h-full"
                     onClick={(e) => e.stopPropagation()}
@@ -232,31 +233,47 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                     <AlertCircle size={36} className="text-[#FF3535]" />
                     <p className="text-sm font-semibold text-white">Video not attached or expired</p>
                     <p className="text-xs text-[#A1A1AA] max-w-xs leading-relaxed">
-                      Select your MP4 video file from your computer below. It will be attached and saved directly:
+                      This reel preview is currently being updated.
                     </p>
 
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="video/mp4,video/quicktime,video/webm"
-                      onChange={handleDirectVideoUpload}
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      disabled={isUploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="mt-2 btn-primary text-xs py-2.5 px-4 inline-flex items-center gap-2"
-                    >
-                      <Upload size={14} />
-                      {isUploading ? 'ATTACHING VIDEO...' : 'ATTACH MP4 VIDEO NOW'}
-                    </button>
-
-                    {uploadSuccess && (
-                      <p className="text-green-400 text-xs font-mono flex items-center gap-1 mt-1">
-                        <Check size={12} /> Video attached successfully!
-                      </p>
+                    {/* ONLY allow upload if authenticated admin */}
+                    {getAuthToken() ? (
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="video/mp4,video/quicktime,video/webm"
+                          onChange={handleDirectVideoUpload}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          disabled={isUploading}
+                          onClick={() => fileInputRef.current?.click()}
+                          className="mt-2 btn-primary text-xs py-2.5 px-4 inline-flex items-center gap-2"
+                        >
+                          <Upload size={14} />
+                          {isUploading ? 'ATTACHING VIDEO...' : 'ADMIN: ATTACH MP4 VIDEO'}
+                        </button>
+                        {uploadSuccess && (
+                          <p className="text-green-400 text-xs font-mono flex items-center gap-1 mt-1">
+                            <Check size={12} /> Video attached successfully!
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      onOpenAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onOpenAdmin();
+                          }}
+                          className="mt-2 border border-white/20 hover:border-[#FF3535] text-white/60 hover:text-white text-xs py-2 px-3 inline-flex items-center gap-1.5 transition-colors font-mono"
+                        >
+                          ADMIN LOGIN TO ATTACH VIDEO
+                        </button>
+                      )
                     )}
                   </div>
                 ) : isLoading ? (
@@ -273,22 +290,40 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                     </div>
                     <p className="text-white/70 text-xs font-semibold mb-2">No video file attached</p>
 
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="video/mp4,video/quicktime,video/webm"
-                      onChange={handleDirectVideoUpload}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      disabled={isUploading}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="btn-primary text-xs py-2 px-3 inline-flex items-center gap-2"
-                    >
-                      <Upload size={13} />
-                      {isUploading ? 'Attaching...' : 'Choose MP4 Video'}
-                    </button>
+                    {/* ONLY allow upload if authenticated admin */}
+                    {getAuthToken() ? (
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="video/mp4,video/quicktime,video/webm"
+                          onChange={handleDirectVideoUpload}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          disabled={isUploading}
+                          onClick={() => fileInputRef.current?.click()}
+                          className="btn-primary text-xs py-2 px-3 inline-flex items-center gap-2"
+                        >
+                          <Upload size={13} />
+                          {isUploading ? 'Attaching...' : 'ADMIN: Choose MP4 Video'}
+                        </button>
+                      </>
+                    ) : (
+                      onOpenAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onOpenAdmin();
+                          }}
+                          className="border border-white/20 hover:border-[#FF3535] text-white/60 hover:text-white text-xs py-1.5 px-3 inline-flex items-center gap-1.5 transition-colors font-mono"
+                        >
+                          ADMIN LOGIN
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
 

@@ -155,6 +155,7 @@ export default function Work({ onOpenAdmin }: WorkProps) {
       <ProjectModal
         project={selectedProject}
         onClose={() => setSelectedProject(null)}
+        onOpenAdmin={onOpenAdmin}
       />
     </>
   );
