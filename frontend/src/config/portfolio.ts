@@ -59,8 +59,8 @@ export const siteConfig = {
       id: '1',
       title: 'Cinematic Reel 01',
       category: 'REELS',
-      videoPath: '', // put file in public/videos/reel-01.mp4 and write '/videos/reel-01.mp4'
-      thumbnailPath: '', // optional thumbnail e.g. '/images/thumbnails/reel-01.jpg'
+      videoPath: '/videos/insta_first_reel-1791734679078.mp4',
+      thumbnailPath: '',
       description: 'Dynamic Instagram reel with beat-synced cuts, speed ramps, and cinematic transitions.',
       techniques: ['Beat Sync', 'Speed Ramping', 'Cinematic Shooting'],
       date: '2024',
