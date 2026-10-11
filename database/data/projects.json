@@ -1,0 +1,46 @@
+[
+  {
+    "id": "1",
+    "title": "Cinematic Reel 01",
+    "category": "REELS",
+    "videoPath": "",
+    "thumbnailPath": "",
+    "description": "Dynamic Instagram reel with beat-synced cuts, speed ramps, and cinematic transitions.",
+    "techniques": ["Beat Sync", "Speed Ramping", "Cinematic Shooting"],
+    "date": "2024",
+    "externalLink": "https://www.instagram.com/___ram_07/"
+  },
+  {
+    "id": "2",
+    "title": "Cinematic Street & Mood",
+    "category": "CINEMATIC",
+    "videoPath": "",
+    "thumbnailPath": "",
+    "description": "Cinematic footage shot and graded with moody color tones, smooth handheld movement, and ambient audio.",
+    "techniques": ["Cinematic Shooting", "Color Grading", "Sound Design"],
+    "date": "2024",
+    "externalLink": "https://www.instagram.com/___ram_07/"
+  },
+  {
+    "id": "3",
+    "title": "Fast-Paced Reel Edit",
+    "category": "REELS",
+    "videoPath": "",
+    "thumbnailPath": "",
+    "description": "High-energy short-form video edit designed for maximum retention and Instagram virality.",
+    "techniques": ["Audio Sync", "Seamless Transitions", "Hook Timing"],
+    "date": "2024",
+    "externalLink": "https://www.instagram.com/___ram_07/"
+  },
+  {
+    "id": "4",
+    "title": "Visual Experiment",
+    "category": "EXPERIMENTS",
+    "videoPath": "",
+    "thumbnailPath": "",
+    "description": "Creative video experimenting with mask transitions, motion match-cuts, and unique sound design.",
+    "techniques": ["Creative Editing", "Mask Cuts", "Sound FX"],
+    "date": "2024",
+    "externalLink": "https://www.instagram.com/___ram_07/"
+  }
+]
