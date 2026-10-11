@@ -363,12 +363,31 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
                   {/* Video File Upload */}
                   <div className="p-4 bg-[#080808] border border-white/10 space-y-3">
                     <label className="block text-xs font-mono text-[#FF3535]">
-                      SELECT VIDEO (Stored directly in your browser)
+                      VIDEO SOURCE (Free Cloud URL or Local File)
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <span className="text-[11px] text-[#A1A1AA] block mb-1">
-                          Option A: Browse MP4 File from your computer
+                          Option A: Direct Cloud Video URL (Recommended for all visitors)
+                        </span>
+                        <input
+                          type="text"
+                          value={videoPath}
+                          onChange={(e) => {
+                            setVideoPath(e.target.value);
+                            setPreviewVideoUrl(e.target.value);
+                          }}
+                          placeholder="e.g. https://res.cloudinary.com/... or /videos/reel1.mp4"
+                          className="w-full px-3 py-2.5 bg-[#111111] border border-white/15 text-white text-xs focus:border-[#FF3535] outline-none"
+                        />
+                        <p className="text-[10px] text-white/40 mt-1">
+                          Paste your free Cloudinary, Supabase Storage, or direct MP4 link.
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="text-[11px] text-[#A1A1AA] block mb-1">
+                          Option B: Browse MP4 File from your computer
                         </span>
                         <input
                           ref={videoFileInputRef}
@@ -385,22 +404,6 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
                           <Upload size={14} className="text-[#FF3535]" />
                           Choose MP4 Video File
                         </button>
-                      </div>
-
-                      <div>
-                        <span className="text-[11px] text-[#A1A1AA] block mb-1">
-                          Option B: Or enter filename inside public/videos/
-                        </span>
-                        <input
-                          type="text"
-                          value={videoPath}
-                          onChange={(e) => {
-                            setVideoPath(e.target.value);
-                            setPreviewVideoUrl(e.target.value);
-                          }}
-                          placeholder="e.g. /videos/reel1.mp4"
-                          className="w-full px-3 py-2.5 bg-[#111111] border border-white/15 text-white text-xs focus:border-[#FF3535] outline-none"
-                        />
                       </div>
                     </div>
 
