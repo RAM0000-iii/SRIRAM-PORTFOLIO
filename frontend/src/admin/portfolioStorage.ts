@@ -179,3 +179,34 @@ export const resetProjectsToDefault = (): void => {
   localStorage.removeItem(STORAGE_KEY);
   window.dispatchEvent(new Event('portfolio_projects_updated'));
 };
+
+// ============================================================
+// CLOUDFLARE R2 CONFIGURATION STORAGE
+// ============================================================
+const CF_CONFIG_KEY = 'sriram_cloudflare_r2_config';
+
+export interface CloudflareConfig {
+  uploadEndpoint: string; // Worker upload URL, e.g. https://sriram-portfolio-videos.<subdomain>.workers.dev
+  publicUrl: string;     // R2 public bucket URL or custom domain
+}
+
+export const DEFAULT_CF_WORKER_URL = 'https://sriram-portfolio-videos.sriram-portfolio.workers.dev';
+
+export const getCloudflareConfig = (): CloudflareConfig => {
+  try {
+    const raw = localStorage.getItem(CF_CONFIG_KEY);
+    if (!raw) return { uploadEndpoint: DEFAULT_CF_WORKER_URL, publicUrl: DEFAULT_CF_WORKER_URL };
+    const parsed = JSON.parse(raw);
+    return {
+      uploadEndpoint: parsed.uploadEndpoint || DEFAULT_CF_WORKER_URL,
+      publicUrl: parsed.publicUrl || DEFAULT_CF_WORKER_URL,
+    };
+  } catch {
+    return { uploadEndpoint: DEFAULT_CF_WORKER_URL, publicUrl: DEFAULT_CF_WORKER_URL };
+  }
+};
+
+export const saveCloudflareConfig = (config: CloudflareConfig): void => {
+  localStorage.setItem(CF_CONFIG_KEY, JSON.stringify(config));
+};
+

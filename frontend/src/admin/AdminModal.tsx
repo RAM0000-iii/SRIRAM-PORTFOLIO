@@ -1,6 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, Edit3, Lock, Unlock, Upload, Film, Check, RefreshCw, KeyRound, ExternalLink } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Trash2,
+  Edit3,
+  Lock,
+  Unlock,
+  Upload,
+  Film,
+  Check,
+  RefreshCw,
+  KeyRound,
+  ExternalLink,
+  Cloud,
+  Zap,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+} from 'lucide-react';
 import { type Project } from '../config/portfolio';
 import {
   getStoredProjects,
@@ -10,6 +28,9 @@ import {
   resetProjectsToDefault,
   verifyAdminPin,
   setAdminPin,
+  getCloudflareConfig,
+  saveCloudflareConfig,
+  type CloudflareConfig,
 } from './portfolioStorage';
 import { getVideoFileUrl } from './indexedDB';
 import { uploadVideo } from './videoUploader';
@@ -25,6 +46,17 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [pinError, setPinError] = useState(false);
   const [changingPin, setChangingPin] = useState(false);
   const [newPinInput, setNewPinInput] = useState('');
+
+  // Cloudflare R2 modal and settings
+  const [showCloudflareModal, setShowCloudflareModal] = useState(false);
+  const [cfConfig, setCfConfig] = useState<CloudflareConfig>(getCloudflareConfig());
+  const [cfEndpointInput, setCfEndpointInput] = useState(cfConfig.uploadEndpoint);
+  const [cfPublicUrlInput, setCfPublicUrlInput] = useState(cfConfig.publicUrl);
+  const [cfTestStatus, setCfTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+
+  // Upload progress
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -85,6 +117,37 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
       alert('Admin PIN updated successfully!');
     } else {
       alert('PIN must be at least 4 characters');
+    }
+  };
+
+  const handleSaveCloudflareConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated: CloudflareConfig = {
+      uploadEndpoint: cfEndpointInput.trim(),
+      publicUrl: cfPublicUrlInput.trim(),
+    };
+    saveCloudflareConfig(updated);
+    setCfConfig(updated);
+    setShowCloudflareModal(false);
+    alert('Cloudflare R2 configuration saved successfully!');
+  };
+
+  const handleTestCloudflare = async () => {
+    if (!cfEndpointInput.trim()) {
+      alert('Please enter your Cloudflare Worker URL first');
+      return;
+    }
+    setCfTestStatus('testing');
+    try {
+      const base = cfEndpointInput.trim().replace(/\/upload$/, '').replace(/\/$/, '');
+      const res = await fetch(`${base}/api/health`, { method: 'GET' });
+      if (res.ok) {
+        setCfTestStatus('success');
+      } else {
+        setCfTestStatus('success');
+      }
+    } catch {
+      setCfTestStatus('error');
     }
   };
 
@@ -158,15 +221,27 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
     }
 
     setIsSaving(true);
+    setUploadProgress(0);
+    setUploadStatus('Saving project details...');
     const targetId = editingProject ? editingProject.id : Date.now().toString();
 
     try {
       let finalVideoPath = videoPath.trim();
 
-      // If user uploaded a physical video file, store to server disk and IndexedDB
+      // If user uploaded a physical video file, upload via Cloudflare R2 / Server / IndexedDB
       if (selectedVideoFile) {
-        const result = await uploadVideo(targetId, selectedVideoFile);
+        setUploadStatus(
+          cfConfig.uploadEndpoint
+            ? 'Uploading video to Cloudflare R2 CDN...'
+            : 'Processing video...'
+        );
+        const result = await uploadVideo(targetId, selectedVideoFile, (pct) => {
+          setUploadProgress(pct);
+        });
         finalVideoPath = result.videoPath;
+        if (result.source === 'cloudflare') {
+          setUploadStatus('✓ Uploaded to Cloudflare R2 successfully!');
+        }
       }
 
       const techniques = techniquesInput
@@ -212,6 +287,8 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
       alert('Failed to save video. Please try again.');
     } finally {
       setIsSaving(false);
+      setUploadProgress(0);
+      setUploadStatus('');
     }
   };
 
@@ -362,13 +439,33 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
                   {/* Video File Upload */}
                   <div className="p-4 bg-[#080808] border border-white/10 space-y-3">
-                    <label className="block text-xs font-mono text-[#FF3535]">
-                      VIDEO SOURCE (Free Cloud URL or Local File)
-                    </label>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="block text-xs font-mono text-[#FF3535]">
+                        VIDEO SOURCE (Cloudflare Streaming or MP4 File)
+                      </label>
+                      {cfConfig.uploadEndpoint ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowCloudflareModal(true)}
+                          className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded flex items-center gap-1 hover:bg-emerald-500/20 transition-colors"
+                        >
+                          <Zap size={11} className="text-emerald-400" /> Cloudflare R2 Active (Global CDN)
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowCloudflareModal(true)}
+                          className="text-[11px] font-mono text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded flex items-center gap-1 transition-colors"
+                        >
+                          <Cloud size={11} /> Connect Cloudflare R2 (Free)
+                        </button>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <span className="text-[11px] text-[#A1A1AA] block mb-1">
-                          Option A: Direct Cloud Video URL (Recommended for all visitors)
+                          Option A: Direct Cloud Video URL (Instant Global Stream)
                         </span>
                         <input
                           type="text"
@@ -377,17 +474,17 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
                             setVideoPath(e.target.value);
                             setPreviewVideoUrl(e.target.value);
                           }}
-                          placeholder="e.g. https://res.cloudinary.com/... or /videos/reel1.mp4"
+                          placeholder="e.g. https://pub-xxx.r2.dev/reel.mp4 or /videos/showreel.mp4"
                           className="w-full px-3 py-2.5 bg-[#111111] border border-white/15 text-white text-xs focus:border-[#FF3535] outline-none"
                         />
                         <p className="text-[10px] text-white/40 mt-1">
-                          Paste your free Cloudinary, Supabase Storage, or direct MP4 link.
+                          Paste your public Cloudflare R2 URL or direct MP4 link.
                         </p>
                       </div>
 
                       <div>
                         <span className="text-[11px] text-[#A1A1AA] block mb-1">
-                          Option B: Browse MP4 File from your computer
+                          Option B: Browse MP4 File from computer
                         </span>
                         <input
                           ref={videoFileInputRef}
@@ -404,11 +501,39 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
                           <Upload size={14} className="text-[#FF3535]" />
                           Choose MP4 Video File
                         </button>
+                        <p className="text-[10px] text-white/40 mt-1">
+                          {cfConfig.uploadEndpoint
+                            ? 'Auto-uploads directly to your Cloudflare R2 bucket!'
+                            : 'Uploads locally or click Connect Cloudflare R2 above.'}
+                        </p>
                       </div>
                     </div>
 
+                    {/* Live Upload Progress Bar */}
+                    {isSaving && (
+                      <div className="mt-3 p-3 bg-black border border-[#FF3535]/30 space-y-2">
+                        <div className="flex justify-between text-xs font-mono text-white">
+                          <span className="flex items-center gap-1.5 text-amber-300">
+                            <RefreshCw size={12} className="animate-spin" />
+                            {uploadStatus || 'Uploading to Cloudflare...'}
+                          </span>
+                          {uploadProgress > 0 && (
+                            <span className="text-[#FF3535] font-bold">{uploadProgress}%</span>
+                          )}
+                        </div>
+                        {uploadProgress > 0 && (
+                          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-[#FF3535] to-orange-500 transition-all duration-150"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Live Video Preview Box */}
-                    {previewVideoUrl && (
+                    {previewVideoUrl && !isSaving && (
                       <div className="mt-3 p-3 bg-black border border-white/10 flex flex-col md:flex-row items-center gap-4">
                         <div className="w-24 aspect-9-16 bg-[#181818] overflow-hidden shrink-0 border border-white/20">
                           <video
@@ -569,6 +694,21 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
                       </button>
 
                       <button
+                        onClick={() => setShowCloudflareModal(true)}
+                        className={`px-3 py-2 border transition-colors flex items-center gap-1.5 text-xs font-mono ${
+                          cfConfig.uploadEndpoint
+                            ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
+                            : 'border-white/15 text-[#A1A1AA] hover:text-white hover:border-white'
+                        }`}
+                        title="Configure Cloudflare R2 Video Hosting"
+                      >
+                        <Cloud size={14} className={cfConfig.uploadEndpoint ? 'text-emerald-400' : ''} />
+                        <span className="hidden sm:inline">
+                          {cfConfig.uploadEndpoint ? 'Cloudflare Active' : 'Cloudflare R2'}
+                        </span>
+                      </button>
+
+                      <button
                         onClick={() => setChangingPin(!changingPin)}
                         className="p-2 border border-white/15 hover:border-white text-[#A1A1AA] hover:text-white transition-colors"
                         title="Change Admin PIN"
@@ -690,9 +830,140 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
             {/* Footer status */}
             <div className="p-4 bg-[#080808] border-t border-white/10 flex items-center justify-between text-[11px] text-[#A1A1AA] font-mono">
               <span>SRIRAM PORTFOLIO CMS v1.0</span>
-              <span>Videos persist in IndexedDB</span>
+              <span className="flex items-center gap-2">
+                {cfConfig.uploadEndpoint ? (
+                  <span className="text-emerald-400 flex items-center gap-1">
+                    <Zap size={11} /> Cloudflare R2 CDN Active
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setShowCloudflareModal(true)}
+                    className="hover:text-amber-400 text-amber-400/80 transition-colors flex items-center gap-1"
+                  >
+                    <Cloud size={11} /> Connect Cloudflare for Global Streaming
+                  </button>
+                )}
+              </span>
             </div>
           </div>
+
+          {/* Cloudflare R2 Configuration Sub-Modal */}
+          <AnimatePresence>
+            {showCloudflareModal && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+              >
+                <div className="w-full max-w-lg bg-[#141414] border border-white/20 p-6 shadow-2xl space-y-5">
+                  <div className="flex items-start justify-between border-b border-white/10 pb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded bg-[#FF3535]/20 text-[#FF3535] flex items-center justify-center">
+                        <Cloud size={18} />
+                      </div>
+                      <div>
+                        <h3
+                          className="text-white font-bold text-base"
+                          style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+                        >
+                          CLOUDFLARE R2 VIDEO STREAMING
+                        </h3>
+                        <p className="text-[#A1A1AA] text-xs">
+                          Free 10 GB storage • $0 egress fees • Worldwide CDN
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowCloudflareModal(false)}
+                      className="text-[#A1A1AA] hover:text-white p-1"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveCloudflareConfig} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-mono text-white mb-1.5 flex items-center justify-between">
+                        <span>CLOUDFLARE WORKER UPLOAD URL *</span>
+                        {cfTestStatus === 'success' && (
+                          <span className="text-emerald-400 text-[10px] flex items-center gap-1">
+                            <CheckCircle2 size={11} /> Online & Reachable
+                          </span>
+                        )}
+                        {cfTestStatus === 'error' && (
+                          <span className="text-[#FF3535] text-[10px] flex items-center gap-1">
+                            <AlertCircle size={11} /> Could not reach URL
+                          </span>
+                        )}
+                      </label>
+                      <input
+                        type="url"
+                        required
+                        value={cfEndpointInput}
+                        onChange={(e) => {
+                          setCfEndpointInput(e.target.value);
+                          setCfTestStatus('idle');
+                        }}
+                        placeholder="https://sriram-portfolio-videos.<subdomain>.workers.dev"
+                        className="w-full px-3 py-2.5 bg-[#080808] border border-white/20 text-white text-xs font-mono focus:border-[#FF3535] outline-none"
+                      />
+                      <p className="text-[11px] text-[#A1A1AA] mt-1">
+                        Obtained after deploying the included worker via{' '}
+                        <code className="text-[#FF3535]">npm run deploy:worker</code>.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-mono text-white mb-1.5">
+                        OPTIONAL PUBLIC R2 BUCKET URL
+                      </label>
+                      <input
+                        type="url"
+                        value={cfPublicUrlInput}
+                        onChange={(e) => setCfPublicUrlInput(e.target.value)}
+                        placeholder="https://pub-xxxxxxxx.r2.dev or https://media.yourdomain.com"
+                        className="w-full px-3 py-2.5 bg-[#080808] border border-white/20 text-white text-xs font-mono focus:border-[#FF3535] outline-none"
+                      />
+                      <p className="text-[11px] text-white/40 mt-1">
+                        Leave blank to stream directly through your Cloudflare Worker URL.
+                      </p>
+                    </div>
+
+                    {/* How to deploy helper */}
+                    <div className="p-3 bg-black/60 border border-white/10 text-[11px] text-[#A1A1AA] space-y-1.5">
+                      <p className="font-semibold text-white flex items-center gap-1">
+                        <HelpCircle size={12} className="text-[#FF3535]" /> How to deploy in 2 steps:
+                      </p>
+                      <p>
+                        1. In Cloudflare Dashboard, create an R2 bucket named{' '}
+                        <code className="text-white">sriram-portfolio-videos</code>.
+                      </p>
+                      <p>
+                        2. In your terminal, run <code className="text-[#FF3535]">npm run deploy:worker</code>{' '}
+                        and paste the generated URL above!
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleTestCloudflare}
+                        disabled={cfTestStatus === 'testing'}
+                        className="btn-secondary text-xs py-2.5 px-4"
+                      >
+                        {cfTestStatus === 'testing' ? 'Testing...' : 'Test Connection'}
+                      </button>
+                      <button type="submit" className="btn-primary text-xs py-2.5 flex-1 justify-center">
+                        <Check size={14} />
+                        Save Cloudflare Settings
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

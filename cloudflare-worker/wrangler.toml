@@ -1,0 +1,14 @@
+name = "sriram-portfolio-videos"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+# Cloudflare R2 Bucket Binding
+# Replace "sriram-portfolio-videos" with your actual R2 bucket name if different
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "sriram-portfolio-videos"
+
+# Optional: If you enabled public development URL on your R2 bucket (e.g. https://pub-xxx.r2.dev)
+# you can set it here, or leave commented out to stream directly through the worker!
+# [vars]
+# PUBLIC_URL = "https://pub-xxxxxx.r2.dev"

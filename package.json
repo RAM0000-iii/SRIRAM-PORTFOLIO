@@ -3,10 +3,17 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "dev": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
     "build": "npm --prefix frontend run build",
-    "preview": "npm --prefix frontend run preview"
+    "preview": "npm --prefix frontend run preview",
+    "deploy:pages": "npm run build && npx wrangler pages deploy frontend/dist",
+    "deploy:worker": "npx wrangler deploy --config cloudflare-worker/wrangler.toml",
+    "cf:login": "npx wrangler login"
   }
 }

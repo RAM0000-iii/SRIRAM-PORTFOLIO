@@ -49,6 +49,23 @@
     background: var(--accent-red);
     border-radius: 2px;
   }
+
+  /* Custom Cursor - hide default system arrow on desktop fine pointers */
+  @media (pointer: fine) {
+    body,
+    a,
+    button,
+    [role="button"],
+    .cursor-pointer {
+      cursor: none !important;
+    }
+
+    input,
+    textarea,
+    [contenteditable="true"] {
+      cursor: text !important;
+    }
+  }
 }
 
 @layer components {

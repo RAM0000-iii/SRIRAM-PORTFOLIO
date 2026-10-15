@@ -97,7 +97,12 @@ export default function Showreel() {
           style={{ border: '1px solid rgba(255,255,255,0.08)' }}
         >
           {hasVideo ? (
-            <div className="relative aspect-16-9 bg-[#080808] cursor-pointer group" onClick={togglePlay}>
+            <div
+              className="relative aspect-16-9 bg-[#080808] cursor-pointer group"
+              data-cursor="video"
+              data-cursor-text={playing ? 'PAUSE' : 'PLAY'}
+              onClick={togglePlay}
+            >
               <video
                 ref={videoRef}
                 src={siteConfig.showreel.videoPath}

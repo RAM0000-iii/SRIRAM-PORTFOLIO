@@ -34,6 +34,8 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3 }}
       className="relative group cursor-pointer"
+      data-cursor="video"
+      data-cursor-text="WATCH"
       style={{ border: '1px solid rgba(255,255,255,0.08)' }}
       onClick={() => onClick(project)}
       onMouseEnter={() => setHovered(true)}

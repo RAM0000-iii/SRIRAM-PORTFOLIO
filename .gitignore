@@ -35,3 +35,10 @@ Thumbs.db
 .qodo/
 .gsd/
 *.tsbuildinfo
+
+# Cloudflare Wrangler
+.wrangler/
+
+# Scripts with credentials
+scripts/upload_to_cloudinary.cjs
+

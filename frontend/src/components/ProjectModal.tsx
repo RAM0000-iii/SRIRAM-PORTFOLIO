@@ -21,6 +21,7 @@ export default function ProjectModal({ project, onClose, onOpenAdmin }: ProjectM
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -130,10 +131,11 @@ export default function ProjectModal({ project, onClose, onOpenAdmin }: ProjectM
     if (!file || !project) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
     setVideoError(false);
 
     try {
-      const result = await uploadVideo(project.id, file);
+      const result = await uploadVideo(project.id, file, (pct) => setUploadProgress(pct));
       // Update project in storage
       const updated: Project = {
         ...project,
@@ -156,6 +158,7 @@ export default function ProjectModal({ project, onClose, onOpenAdmin }: ProjectM
       alert('Failed to attach video. Please try again.');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -307,7 +310,11 @@ export default function ProjectModal({ project, onClose, onOpenAdmin }: ProjectM
                           className="btn-primary text-xs py-2 px-3 inline-flex items-center gap-2"
                         >
                           <Upload size={13} />
-                          {isUploading ? 'Attaching...' : 'ADMIN: Choose MP4 Video'}
+                          {isUploading
+                            ? uploadProgress > 0
+                              ? `Uploading ${uploadProgress}%...`
+                              : 'Uploading...'
+                            : 'ADMIN: Choose MP4 Video'}
                         </button>
                       </>
                     ) : (

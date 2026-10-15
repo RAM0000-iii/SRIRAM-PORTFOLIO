@@ -9,6 +9,7 @@ import Process from './sections/Process';
 import Contact from './sections/Contact';
 import Footer from './components/Footer';
 import AdminModal from './admin/AdminModal';
+import CustomCursor from './components/CustomCursor';
 
 function App() {
   const [adminOpen, setAdminOpen] = useState(false);
@@ -27,6 +28,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#080808] text-white overflow-x-hidden">
+      <CustomCursor />
       <Navbar onOpenAdmin={() => setAdminOpen(true)} />
       <main>
         <Hero />
